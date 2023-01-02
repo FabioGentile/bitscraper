@@ -2,7 +2,6 @@ from .bit_market_scraper import BITScraper
 
 
 class ProductListing(object):
-
     def __init__(self, *args, scraper=None, **kwargs):
         self._scraper = scraper
         self._products = scraper.get_products(*args, **kwargs)
@@ -22,10 +21,8 @@ class ProductListing(object):
 
 
 class BITListing(ProductListing):
-
     def __init__(self, scraper=BITScraper(), category=None, subcategory=None):
-        super(BITListing, self).__init__(scraper=BITScraper(),
-                                         category=category, subcategory=subcategory)
+        super(BITListing, self).__init__(scraper=BITScraper(), category=category, subcategory=subcategory)
         self._category = category
         self._subcategory = subcategory
 

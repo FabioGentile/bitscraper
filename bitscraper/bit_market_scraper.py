@@ -21,12 +21,11 @@ class SiteScraper(object):
 
     def get_page_html(self, params):
         response = requests.get(self.baseurl, params)
-        self.page = bs(response.text, 'html.parser')
+        self.page = bs(response.text, "html.parser")
         return self.page
 
 
 class ProductScraper(SiteScraper):
-
     def get_products(self, *args, **kwargs):
         pass
 
@@ -35,8 +34,7 @@ class ProductScraper(SiteScraper):
 
 
 class BITScraper(ProductScraper):
-
-    def __init__(self, url='https://borsaitaliana.it/borsa/listino-ufficiale'):
+    def __init__(self, url="https://borsaitaliana.it/borsa/listino-ufficiale"):
         super(BITScraper, self).__init__(url)
         self.mainpage = self.get_list_page()
         self.date = self.mainpage.font.text[-10:].strip()
@@ -52,25 +50,19 @@ class BITScraper(ProductScraper):
         return self._avail_subcategories
 
     def get_list_page(self):
-        return self.get_page_html(params={'target': 'null', 'service': 'Listino', 'lang': 'it'})
+        return self.get_page_html(params={"target": "null", "service": "Listino", "lang": "it"})
 
     def get_data_page(self, category, subcategory):
         if category and subcategory:
             c = self.avail_categories.index(category)
             s = self.avail_subcategories[c].index(subcategory) + 1
-            logger.debug(
-                "Now retrieving products for category: {} - subcategory {}".format(category, subcategory))
-            params = {'target': 'null',
-                      'service': 'Data',
-                      'lang': 'it',
-                      'main_list': c,
-                      'sub_list': s}
+            logger.debug("Now retrieving products for category: {} - subcategory {}".format(category, subcategory))
+            params = {"target": "null", "service": "Data", "lang": "it", "main_list": c, "sub_list": s}
             page = self.get_page_html(params=params)
-            table = page.find(
-                'table', attrs={'class': 'table_dati'}).find_all('tr')[3:]
+            table = page.find("table", attrs={"class": "table_dati"}).find_all("tr")[3:]
             items = []
             for tr in table:
-                item = tr.find('td').find('a').get('href').split('=')[-1]
+                item = tr.find("td").find("a").get("href").split("=")[-1]
                 items.append(item)
             return items
         else:
@@ -82,19 +74,25 @@ class BITScraper(ProductScraper):
             c = self.avail_categories.index(category)
             s = self.avail_subcategories[c].index(subcategory) + 1
             logger.debug(
-                "Now retrieving info for product {} in category: {} - subcategory {}".format(prodcode, category, subcategory))
-            page = self.get_page_html(params={'target': 'null',
-                                              'service': 'Detail',
-                                              'lang': 'it',
-                                              'main_list': c,
-                                              'sub_list': s,
-                                              'extra': prodcode})
-            table = page.find('table', attrs={'class': 'table_dati'})
-            product = {'data_listino': self.date}
-            for row in table.find_all('tr')[2:]:
-                k, v = tuple(map(lambda x: x.text, row.find_all('td')))
-                product[k.translate(
-                    {ord(c): '_' for c in string.whitespace}).lower()] = v
+                "Now retrieving info for product {} in category: {} - subcategory {}".format(
+                    prodcode, category, subcategory
+                )
+            )
+            page = self.get_page_html(
+                params={
+                    "target": "null",
+                    "service": "Detail",
+                    "lang": "it",
+                    "main_list": c,
+                    "sub_list": s,
+                    "extra": prodcode,
+                }
+            )
+            table = page.find("table", attrs={"class": "table_dati"})
+            product = {"data_listino": self.date}
+            for row in table.find_all("tr")[2:]:
+                k, v = tuple(map(lambda x: x.text, row.find_all("td")))
+                product[k.translate({ord(c): "_" for c in string.whitespace}).lower()] = v
             return product
         else:
             logger.error("Not enough parameters provided.")
@@ -102,10 +100,7 @@ class BITScraper(ProductScraper):
 
     def get_categories(self):
 
-        return [
-            v.text for v in
-            self.mainpage.select("select[name=main_list] option")
-        ]
+        return [v.text for v in self.mainpage.select("select[name=main_list] option")]
 
     def get_subcategories(self, category=None):
 
@@ -117,28 +112,31 @@ class BITScraper(ProductScraper):
                 logger.error("Category {} does not exist.".format(category))
                 raise
 
-        sc = self.mainpage.find_all('script')[1].text.translate(
-            {ord(c): None
-             for c in string.whitespace}).split(';')[1:9]
+        sc = (
+            self.mainpage.find_all("script")[1]
+            .text.translate({ord(c): None for c in string.whitespace})
+            .split(";")[1:9]
+        )
         if idx:
             sc = [sc[idx]]
 
-        rgx = 'level\d.*Array\((.+)\)'
+        rgx = "level\d.*Array\((.+)\)"
         r = []
 
         for x in sc:
-            r.append(tuple(map(lambda x: x.replace('\'', ''),
-                               re.findall(rgx, x)[0].split(','))))
+            r.append(tuple(map(lambda x: x.replace("'", ""), re.findall(rgx, x)[0].split(","))))
 
         return r
 
     def get_products(self, *args, **kwargs):
-        category = kwargs.get('category')
-        subcategory = kwargs.get('subcategory')
+        category = kwargs.get("category")
+        subcategory = kwargs.get("subcategory")
         return self.get_data_page(category=category, subcategory=subcategory)
 
     def get_details(self, *args, **kwargs):
-        category = kwargs.get('category')
-        subcategory = kwargs.get('subcategory')
-        products = kwargs.get('products')
-        return tuple(map(lambda prod: self.get_detail_page(category=category, subcategory=subcategory, prodcode=prod), products))
+        category = kwargs.get("category")
+        subcategory = kwargs.get("subcategory")
+        products = kwargs.get("products")
+        return tuple(
+            map(lambda prod: self.get_detail_page(category=category, subcategory=subcategory, prodcode=prod), products)
+        )
